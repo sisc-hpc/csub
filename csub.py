@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 ##
-# Copyright 2009-2016 Ghent University
+# Copyright 2009-2018 Ghent University
+# Copyright 2018 Free University of Brussel
 #
 # This file is part of csub,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -28,12 +29,12 @@
 """
 This is a python wrapper for checkpointed job submission
 It is also a selfcontained jobscript
-Requires torque >= 2.4.2 and BLCR
+Requires torque >= 2.4.2 and DMTCP
 
 @author: Stijn De Weirdt (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 @author: Jens Timmerman (Ghent University)
-@author: Ward Poelmans (Ghent University)
+@author: Ward Poelmans (Free University of Brussels)
 """
 
 import os
@@ -116,50 +117,49 @@ fi
 
 """
 
-chkptdirbasebase = os.path.join(
-    "%s" % (os.environ[csub_vars_map['CSUB_SCRATCH']]), "chkpt")
+chkptdirbasebase = os.path.join("%s" % (os.environ[csub_vars_map['CSUB_SCRATCH']]), "chkpt")
 chkptsubdir = "checkpoint"
 tarbfilename = 'job.localdir.tarball'
 basescriptname = "base"
 
 
 def usage():
-    print """
+    print("""
     csub [opts] [-s jobscript]
 
     Options:
-        -h or --help   Display this message
+        -h or --help              Display this message
 
-        -s        Name of jobscript used for job.
-                Warning: The jobscript should not create it's own local temporary directories.
+        -s                        Name of jobscript used for job.
+                                  Warning: The jobscript should not create it's own local temporary directories.
 
-        -q    Queue to submit job in [default: scheduler default queue]
+        -q                        Queue to submit job in [default: scheduler default queue]
 
-        -t     Array job specification (see -t in man qsub) [default: none]
+        -t                        Array job specification (see -t in man qsub) [default: none]
 
-        --pre     Run prestage script (Current: copy local files) [default: no prestage]
+        --pre                     Run prestage script (Current: copy local files) [default: no prestage]
 
-        --post    Run poststage script (Current: copy results to localdir/result.) [default: no poststage]
+        --post                    Run poststage script (Current: copy results to localdir/result.) [default: no poststage]
 
-        --shared    Run in shared directory (no pro/epilogue, shared checkpoint) [default: run in local dir]
+        --shared                  Run in shared directory (no pro/epilogue, shared checkpoint) [default: run in local dir]
 
-        --no_mimic_pro_epi    Do not mimic prologue/epilogue scripts [default: mimic pro/epi (bug workaround)]
+        --no_mimic_pro_epi        Do not mimic prologue/epilogue scripts [default: mimic pro/epi (bug workaround)]
 
-        --job_time=<string>    Specify wall time for job (format: <hours>:<minutes>:<seconds>s, e.g. 3:12:47) [default: 10h]
+        --job_time=<string>       Specify wall time for job (format: <hours>:<minutes>:<seconds>s, e.g. 3:12:47) [default: 10:00:00]
 
-        --chkpt_time=<string>    Specify time for checkpointing a job (format: see --job_time) [default: 15m]
+        --chkpt_time=<string>     Specify time for checkpointing a job (format: see --job_time) [default: 00:15:00]
 
-        --cleanup_after_restart         Specify whether checkpoint file and tarball should be cleaned up after a successful restart (NOT RECOMMENDED!) [default: no cleanup]
+        --cleanup_after_restart   Specify whether checkpoint file and tarball should be cleaned up after a successful restart (NOT RECOMMENDED!) [default: no cleanup]
 
         --no_cleanup_chkpt        Don't clean up checkpoint stuff in $%(CSUB_SCRATCH)s/chkpt after job completion [default: do cleanup]
 
-        --resume=<string>        Try to resume a checkpointed job; argument should be unique name of job to resume [default: none]
+        --resume=<string>         Try to resume a checkpointed job; argument should be unique name of job to resume [default: none]
 
-        --term_kill_mode        Kill checkpointed process with SIGTERM instead of SIGKILL after checkpointing [defailt: SIGKILL]
+        --term_kill_mode          Kill checkpointed process with SIGTERM instead of SIGKILL after checkpointing [default: SIGKILL]
 
-        --vmem=<string>        Specify amount of virtual memory required [default: none specified]"
+        --vmem=<string>           Specify amount of virtual memory required [default: none specified]"
 
-""" % csub_vars_map
+""" % csub_vars_map)
 
     sys.exit(0)
 
@@ -243,8 +243,8 @@ def gen_base_header(localmap, script):
                 'prologue_header_spec', 'epilogue_header_spec']
 
     if any([(k not in localmap.keys()) for k in req_keys]):
-        print """(gen_base_header) Not all required keys found in localmap (%s),
-                 things will probably go wrong...""" % ','.join(req_keys)
+        print("""(gen_base_header) Not all required keys found in localmap (%s),
+                 things will probably go wrong...""" % ','.join(req_keys))
 
     if csub_vars_map['CSUB_SCHEDULER'] == "PBS":
 
@@ -253,8 +253,8 @@ def gen_base_header(localmap, script):
         l_specs = ""
         reglspecs = re.compile("^\s*#PBS\s+-l\s+[^\n]*$", re.MULTILINE).findall(script)
         if reglspecs:
-            l_specs = '\n'.join([x for x in reglspecs if (not re.compile("^\s*#PBS\s+-l\s+walltime").match(x))
-                                 and (not vmemregexp.match(x))])
+            l_specs = '\n'.join([x for x in reglspecs if (not re.compile("^\s*#PBS\s+-l\s+walltime").match(x)) and
+                                 (not vmemregexp.match(x))])
         localmap.update({'l_specs': l_specs})
 
         queue = localmap['queue']
@@ -361,17 +361,17 @@ def checkResume(name):
 
     # check for job checkpoint directory
     if not os.path.isdir(chkptdirbase):
-        print "Job checkpoint directory (%s) not found..." % chkptdirbase
+        print("Job checkpoint directory (%s) not found..." % chkptdirbase)
         return (None, None)
     else:
-        print "# Job checkpoint directory found @ %s" % chkptdirbase
+        print("# Job checkpoint directory found @ %s" % chkptdirbase)
         # check for job script
         jobscript = os.path.join(chkptdirbase, "%s.sh" % cleanname)
         if not os.path.isfile(jobscript):
-            print "Job script (%s) not found..." % jobscript
+            print("Job script (%s) not found..." % jobscript)
             return (None, None)
         else:
-            print "# Job script found @ %s" % jobscript
+            print("# Job script found @ %s" % jobscript)
             # check for tarball containing checkpoint and intermediary files of job
             # and for checkpoint file (no tarball in case of --shared)
             tarbfile = os.path.join(chkptdirbase, chkptsubdir, tarbfilename)
@@ -380,15 +380,15 @@ def checkResume(name):
             chkptfilefound = os.path.isfile(chkptfile)
 
             if not tarbfilefound and not chkptfilefound:
-                print "# Tarball for job (%s), which contains checkpoint and intermediate files, not found..." % tarbfile
-                print "# Checkpoint file for job (%s) not found..." % chkptfile
-                print "# This is ok if job was submitted with --shared."
+                print("# Tarball for job (%s), which contains checkpoint and intermediate files, not found..." % tarbfile)
+                print("# Checkpoint file for job (%s) not found..." % chkptfile)
+                print("# This is ok if job was submitted with --shared.")
                 return (None, None)
             else:
                 if tarbfilefound:
-                    print "# Job tarball found @ %s" % tarbfile
+                    print("# Job tarball found @ %s" % tarbfile)
                 elif chkptfilefound:
-                    print "# Checkpoint file for job found @ %s" % chkptfile
+                    print("# Checkpoint file for job found @ %s" % chkptfile)
                 else:
                     sys.stderr.write("ERROR! Neither job tarball (%s) nor checkpoint file (%s) found. Huh?\n" % (tarbfile, chkptfile))
 
@@ -396,10 +396,10 @@ def checkResume(name):
                 basescript = os.path.join(
                     chkptdirbase, chkptsubdir, basescriptname)
                 if not os.path.isfile(basescript):
-                    print "Base script for job (%s) not found..." % basescript
+                    print("Base script for job (%s) not found..." % basescript)
                     return (None, None)
                 else:
-                    print "# Base script for job found @ %s" % basescript
+                    print("# Base script for job found @ %s" % basescript)
                     return (basescript, arrayid)
 
 
@@ -416,16 +416,16 @@ def submitbase(base, name):
             p.tochild.close()  # no input
             ec = p.wait()  # wait for qsub
             out = p.fromchild.read()  # read output
-            print out  # show jod id
+            print(out)  # show jod id
         except Exception, err:
-            print "Something went wrong with forking qsub: %s" % err
+            print("Something went wrong with forking qsub: %s" % err)
             sys.exit(1)
 
         if ec > 0:
             sys.stderr.write("Submission failed: exitcode %s, output %s\n" % (ec, out))
             sys.exit(1)
 
-        print "Job with name %s succesfully submitted" % (name)
+        print("Job with name %s succesfully submitted" % name)
 
     else:
         sys.stderr.write("ERROR! (in submitbase) Don't know how to handle %s as a job scheduler, sorry.\n")
@@ -656,7 +656,7 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hs:q:t:", allopts)
     except getopt.GetoptError, err:
-        print "\n" + str(err)
+        print("\n" + str(err))
         usage()
         sys.exit(2)
 
@@ -732,10 +732,10 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if not script and not resume_job_name:
-        print """ERROR! No jobscript read or job to resume specified.
+        print("""ERROR! No jobscript read or job to resume specified.
 Please use -s or --script to specify the job script, or
 use --resume=>job_name> to resume a job from the latest checkpoint.
-(use -h or --help for help)"""
+(use -h or --help for help)""")
         sys.exit(1)
 
     if resume_job_name:
@@ -744,7 +744,7 @@ use --resume=>job_name> to resume a job from the latest checkpoint.
             txt = """ERROR! Found extra options when resuming from checkpoint! (see -h or --help)
 This is useless, because the original job script is part of the checkpoint, and this script will be resubmitted.
 If you want to vary job parameters, please see --vmem, --job_time and/or --chkpt_time."""
-            print txt
+            print(txt)
             sys.exit(1)
 
         # try and resume job with specified name
@@ -817,14 +817,14 @@ If you want to vary job parameters, please see --vmem, --job_time and/or --chkpt
 
             for filename in tomove:
                 try:
-                    print "Taking backup of output file %s" % filename
+                    print("Taking backup of output file %s" % filename)
                     shutil.copy2(filename, "%s.prev" % filename)
                 except OSError as err:
                     sys.stderr.write("Failed to rename the log output of the previous run: %s\n" % filename)
                     sys.exit(1)
 
             submitbase(base, resume_job_name)
-            print "Job %s succesfully resumed." % resume_job_name
+            print("Job %s succesfully resumed." % resume_job_name)
         else:
             sys.stderr.write("Resuming of job %s failed. Sorry.\n" % resume_job_name)
             sys.exit(1)
