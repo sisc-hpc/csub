@@ -80,7 +80,7 @@ PRESTAGELOCAL = """#!/bin/bash
 srcdir=%(srcdir)s
 if [ -d  $srcdir ]
 then
-  cp -r $srcdir/* .
+  cp -ra $srcdir/* .
   if [ $? -gt 0 ]
   then
       echo "Copying failed ($srcdir to $PWD)"
@@ -102,7 +102,7 @@ mkdir -p $destdir
 
 if [ -d  $destdir ]
 then
-  cp -r * $destdir
+  cp -ra * $destdir
   if [ $? -gt 0 ]
   then
       echo "Copying failed ($PWD to $destdir)"
