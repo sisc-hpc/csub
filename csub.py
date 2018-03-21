@@ -200,7 +200,7 @@ def replace_walltime_str(script, wall_time_str):
 
 def replace_vmem(script, vmem):
     if csub_vars_map['CSUB_SCHEDULER'] == "PBS":
-        vmem_regexp = re.compile("^(#PBS -l vmem)=(?P<vmem>.+)\s*(\S*)$", re.MULTILINE)
+        vmem_regexp = re.compile("^(#PBS -l [pv]?mem)=(?P<vmem>.+)\s*(\S*)$", re.MULTILINE)
         return vmem_regexp.sub(r"\1=%s \3" % vmem, script)
     else:
         sys.stderr.write("(replace_vmem) Don't know how to handle %s as a job scheduler, sorry.\n")
@@ -248,7 +248,7 @@ def gen_base_header(localmap, script):
 
     if csub_vars_map['CSUB_SCHEDULER'] == "PBS":
 
-        vmemregexp = re.compile("^\s*#PBS\s+-l\s+vmem")
+        vmemregexp = re.compile("^\s*#PBS\s+-l\s+[pv]?mem")
 
         l_specs = ""
         reglspecs = re.compile("^\s*#PBS\s+-l\s+[^\n]*$", re.MULTILINE).findall(script)
