@@ -167,15 +167,18 @@ resubmit () {
     myecho "begin $fun `date`"
 
     myexit=0
+    if [ "$VSC_INSTITUTE" == "brussel" ]; then
+        qsubarg="-l feature=$VSC_ARCH_LOCAL"
+    fi
     ## resubmit this job (-N is required for array jobs!)
     ## the rest of this job should finish before all else
-    out=`qsub -N $jobname -q $%(CSUB_QUEUE)s -o $chkbaseout -e $chkbaseerr -W depend=afterok:$%(CSUB_JOBID)s "$chkdir/base"`
+    out=`qsub -N $jobname -q $%(CSUB_QUEUE)s ${qsubarg} -o $chkbaseout -e $chkbaseerr -W depend=afterok:$%(CSUB_JOBID)s "$chkdir/base"`
     if [ $? -gt 0 ]
     then
         myecho "Job resubmit failed."
         myecho "Job resubmit output): $out"
         sleep 5
-        out=`qsub -N $jobname -q $%(CSUB_QUEUE)s -o $chkbaseout -e $chkbaseerr -W depend=afterok:$%(CSUB_JOBID)s "$chkdir/base"`
+        out=`qsub -N $jobname -q $%(CSUB_QUEUE)s ${qsubarg} -o $chkbaseout -e $chkbaseerr -W depend=afterok:$%(CSUB_JOBID)s "$chkdir/base"`
         if [ $? -gt 0 ]
         then
             myecho "Job resubmit failed again."
