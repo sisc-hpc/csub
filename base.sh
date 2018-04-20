@@ -248,7 +248,9 @@ restart () {
     sleep 3
     coord_port=$(cat "$chkdir/$PORTFILE")
     myecho "DMTCP coordinator port: $coord_port"
-    $DMTCP_RESTART --coord-port $coord_port `find $chkdir -name '*.dmtcp'` &
+    checkpoint_files=$(grep -Pazo "(?s)^worker_ckpts='(.*?)'" $chkdir/dmtcp_restart_script.sh | tr ' ' '\n' | grep -E '\.dmtcp$')
+    myecho "DMTCP restart files: $checkpoint_files"
+    $DMTCP_RESTART --coord-port $coord_port $checkpoint_files &
     script_pid=$!
     myecho "PID of relaunched script: $script_pid"
     # check status of relaunched script shortly after
