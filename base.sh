@@ -356,7 +356,7 @@ firststart () {
     then
 	   "$chkprestage"
     fi
-    $DMTCP_LAUNCH --coord-logfile "$chkdir/coord.log.$$" --interval 0 --ckptdir "$chkdir" --new-coordinator --port-file $chkdir/$PORTFILE bash -c "./${scriptname} > ${jobout} 2> ${joberr}" &
+    $DMTCP_LAUNCH --coord-logfile "$chkdir/coord.log.$$" --interval 0 --ckptdir "$chkdir" --new-coordinator --port-file $chkdir/$PORTFILE --no-gzip bash -c "./${scriptname} > ${jobout} 2> ${joberr}" &
     script_pid=$!
     myecho "PID of running script: $script_pid"
     # check status of process shortly after launch
