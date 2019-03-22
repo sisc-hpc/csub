@@ -1,7 +1,7 @@
 Summary: csub wrapper for qsub and DMTCP
 Name: csub
 Version: 2.2
-Release: 2
+Release: 3.br%{?dist}
 BuildArch: noarch
 License: GPL
 Group: Applications/System
